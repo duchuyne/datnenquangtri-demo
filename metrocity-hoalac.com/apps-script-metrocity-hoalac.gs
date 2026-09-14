@@ -1,7 +1,7 @@
 // ============================================================
 // GOOGLE APPS SCRIPT – metrocity-hoalac.com Lead Collection
-// Lưu dữ liệu form (Tên, SĐT, Tài chính) → Google Sheet
-// Gửi email thông báo lead đến chủ trang tính + người có quyền
+// Lưu dữ liệu form (Tên, SĐT, Nhu cầu cụ thể) → Google Sheet
+// Gửi email thông báo lead đến danh sách email được cấu hình
 // ============================================================
 //
 // CÁCH CÀI ĐẶT:
@@ -28,8 +28,10 @@
 const SHEET_ID   = '10c6qLnV1q46wwtGxCEGGKRRjQSH0o6sdMHGMiHwCyzM';
 const SHEET_NAME = 'Sheet1'; // Tên tab trong Google Sheet
 
-// Email nhận thông báo mặc định (sẽ được gộp với các email khác từ Sheet ACL)
+// Chỉ gửi tới các địa chỉ trong danh sách này, không tự lấy người có quyền trên Sheet.
+// Có thể thêm nhiều địa chỉ nếu cần nhận thông báo ở nhiều hộp thư.
 const DEFAULT_NOTIFY_EMAIL = 'phamvuduchuynd@gmail.com';
+const NOTIFY_EMAILS = [DEFAULT_NOTIFY_EMAIL];
 
 // ─── BẢO VỆ SPAM ─────────────────────────────────────────────
 const MIN_FILL_MS       = 3000;   // Tối thiểu 3 giây mới được submit
@@ -115,7 +117,7 @@ function handleSubmission(p) {
 
     // 7) Tạo header nếu sheet trống
     if (sh.getLastRow() === 0) {
-      sh.appendRow(['Thời Gian', 'Họ Và Tên', 'Số Điện Thoại', 'Tài Chính']);
+      sh.appendRow(['Thời Gian', 'Họ Và Tên', 'Số Điện Thoại', 'Nhu Cầu Cụ Thể']);
       const hr = sh.getRange(1, 1, 1, 4);
       hr.setFontWeight('bold');
       hr.setBackground(BRAND.primary);
@@ -201,11 +203,9 @@ function hashKey(str) {
 }
 
 // ─── RESOLVE EMAIL NHẬN THÔNG BÁO ────────────────────────────
-// Tự động lấy chủ + editors + viewers của Google Sheet
+// Không gửi theo quyền chia sẻ Sheet để tránh gửi tới hộp thư lỗi/đã đầy.
 function resolveNotificationEmails(sheetId) {
-  const candidates = [DEFAULT_NOTIFY_EMAIL];
-  const sharedUsers = getSheetShareRecipients(sheetId);
-  for (let i = 0; i < sharedUsers.length; i++) candidates.push(sharedUsers[i]);
+  const candidates = NOTIFY_EMAILS;
 
   const seen = {}, out = [];
   for (let i = 0; i < candidates.length; i++) {
@@ -257,7 +257,7 @@ function sendLeadNotification(recipients, lead) {
     'Xin chào,\n\nThông tin lead mới:\n' +
     '- Họ tên: ' + name + '\n' +
     '- Số điện thoại: ' + phone + '\n' +
-    '- Tài chính: ' + finance + '\n' +
+    '- Nhu cầu cụ thể: ' + finance + '\n' +
     '- Thời gian: ' + when + '\n\n' +
     'Nguồn: Form website ' + BRAND.website
   );
@@ -267,7 +267,7 @@ function sendLeadNotification(recipients, lead) {
     '-'.repeat(40),
     'Họ tên         : ' + name,
     'Số điện thoại  : ' + (phone || '(trống)'),
-    'Tài chính      : ' + finance,
+    'Nhu cầu cụ thể : ' + finance,
     'Thời gian      : ' + when,
     '',
     'Gọi nhanh: ' + callHref,
@@ -334,9 +334,9 @@ function buildLeadEmailHtml(v) {
   '</td>' +
   '</tr>' +
 
-  // Row: Tài chính
+  // Row: Nhu cầu cụ thể
   '<tr>' +
-  '<td style="font-size:13px;color:' + BRAND.subtext + ';vertical-align:top;padding-right:12px;">💰 Tài chính</td>' +
+  '<td style="font-size:13px;color:' + BRAND.subtext + ';vertical-align:top;padding-right:12px;">💬 Nhu cầu cụ thể</td>' +
   '<td style="font-size:15px;color:' + BRAND.text + ';">' + finance + '</td>' +
   '</tr>' +
 
@@ -520,7 +520,7 @@ function _sendSheetChangeNotif(changeType, sheet, row, eventObj) {
     '',
     'Họ tên         : ' + (name    || '(trống)'),
     'Số điện thoại  : ' + (phone   || '(trống)'),
-    'Tài chính      : ' + (finance || '(trống)'),
+    'Nhu cầu cụ thể : ' + (finance || '(trống)'),
     'Thời gian      : ' + when
   ].join('\n');
 

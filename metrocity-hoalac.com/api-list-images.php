@@ -19,7 +19,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     ]);
 }
 
-$imagesRoot = realpath(__DIR__ . DIRECTORY_SEPARATOR . 'images');
+$source = trim((string)($_GET['source'] ?? ''));
+$imagesRootPath = $source === 'zones'
+    ? __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'images cac khu dat'
+    : __DIR__ . DIRECTORY_SEPARATOR . 'images';
+$imagesRoot = realpath($imagesRootPath);
 if ($imagesRoot === false || !is_dir($imagesRoot)) {
     json_response(500, [
         'ok' => false,
@@ -68,7 +72,9 @@ foreach ($iter as $fileInfo) {
     }
 
     $relPath = str_replace(DIRECTORY_SEPARATOR, '/', $relPath);
-    $displayPath = 'images/' . $relPath;
+    $displayPath = $source === 'zones'
+        ? '../images/images cac khu dat/' . $relPath
+        : 'images/' . $relPath;
 
     if ($queryLower !== '') {
         $name = mb_strtolower($fileInfo->getBasename(), 'UTF-8');
