@@ -5642,6 +5642,36 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a){
       });
     })
     .catch(function() {
+      return fetch('https://api.github.com/repos/duchuyne/datnenquangtri-demo/git/trees/main?recursive=1', { cache: 'no-store' })
+        .then(function(response) {
+          if (!response.ok) throw new Error('GitHub API HTTP ' + response.status);
+          return response.json();
+        })
+        .then(function(tree) {
+          var imageExtensions = /\.(jpg|jpeg|png|webp|gif|svg|avif)$/i;
+          var groups = {};
+          zoneNames.forEach(function(zone) { groups[zone] = []; });
+          (tree.tree || []).forEach(function(file) {
+            if (file.type !== 'blob' || file.path.indexOf('images/images cac khu dat/') !== 0 || !imageExtensions.test(file.path)) return;
+            var relativePath = file.path.slice('images/'.length);
+            var imagePath = '../images/' + relativePath;
+            zoneNames.forEach(function(zone) {
+              if (file.path.indexOf('/' + zone + '/') !== -1) groups[zone].push(imagePath);
+            });
+          });
+          window.zoneGalleryGroups = groups;
+          document.querySelectorAll('.zone-plan-card .zone-plan-link').forEach(function(item, index) {
+            var count = item.querySelector('.zone-plan-count');
+            if (!count) {
+              count = document.createElement('span');
+              count.className = 'zone-plan-count';
+              item.appendChild(count);
+            }
+            count.textContent = 'Ảnh ' + (groups[zoneNames[index]] || []).length;
+          });
+        });
+    })
+    .catch(function() {
       var fallbackGroups = {};
       document.querySelectorAll('.zone-plan-card .zone-plan-link img').forEach(function(image, index) {
         fallbackGroups[zoneNames[index]] = [image.getAttribute('src')];
@@ -5656,8 +5686,6 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a){
         }
         count.textContent = 'Ảnh 1';
       });
-      if (gallery) gallery.innerHTML = '<div class="zone-gallery-title">Toàn bộ ảnh các khu đất</div>' +
-        '<p class="zone-gallery-empty">Đang chạy trực tiếp từ file nên chỉ mở ảnh đại diện. Khi chạy qua hosting/PHP, toàn bộ ảnh trong từng thư mục sẽ được tải vào gallery.</p>';
     });
 })();
 </script>
